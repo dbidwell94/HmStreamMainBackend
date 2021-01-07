@@ -17,7 +17,7 @@ const connectionOptions: ConnectionOptions =
       }
     : {
         type: "postgres",
-        url: process.env.DB_URL,
+        url: process.env.DATABASE_URL,
       };
 
 const connection: Promise<Connection> = createConnection(connectionOptions);
