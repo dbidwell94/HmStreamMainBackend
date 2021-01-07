@@ -23,11 +23,12 @@ app.use(async (ctx: Context, next: () => Promise<any>) => {
 
 app.use(async (ctx: Context, next: () => Promise<any>) => {
   ctx.set("Content-Type", "application/json");
+  ctx.set("Access-Control-Allow-Origin", "*");
   await next();
 });
 
 app.use(apiRouter.routes);
-app.use(apiRouter.methods);4
+app.use(apiRouter.methods);
 
 app.on("error", console.error);
 
