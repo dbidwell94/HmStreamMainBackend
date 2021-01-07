@@ -1,13 +1,13 @@
 import Koa, { Context } from "koa";
 import HttpStatus from "http-status-codes";
 import dotenv from "dotenv";
-import koaBody from 'koa-body';
-import * as routes from "./router";
+import koaBody from "koa-body";
+import apiRouter from './router';
 
 dotenv.config();
 
 const app = new Koa();
-app.use(koaBody({multipart: true}));
+app.use(koaBody());
 
 app.use(async (ctx: Context, next: () => Promise<any>) => {
   try {
@@ -26,8 +26,8 @@ app.use(async (ctx: Context, next: () => Promise<any>) => {
   await next();
 });
 
-app.use(routes.userRoute.default.routes());
-app.use(routes.userRoute.default.allowedMethods);
+app.use(apiRouter.routes);
+app.use(apiRouter.methods);4
 
 app.on("error", console.error);
 

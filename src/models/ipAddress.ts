@@ -1,13 +1,17 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToOne,
-  JoinColumn,
-} from "typeorm";
+import { Entity, Column, OneToOne, JoinColumn } from "typeorm";
 
 import User from "./user";
 import Auditable from "./auditable";
+
+export enum ipAddressColumnsRequest {
+  address = "address",
+  user = "userId",
+}
+
+export type iIpAddressMin = {
+  address: string;
+  userId: number;
+};
 
 @Entity()
 export default class IpAddress extends Auditable {
@@ -15,6 +19,6 @@ export default class IpAddress extends Auditable {
   address: string;
 
   @OneToOne(() => User)
-  @JoinColumn({ name: "userId" })
+  @JoinColumn({ name: "userId", referencedColumnName: "id" })
   user: User;
 }

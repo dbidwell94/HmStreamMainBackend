@@ -1,24 +1,32 @@
-import { createQueryBuilder, Repository } from "typeorm";
+import { Repository } from "typeorm";
 import User, { iUserMinimum, iUserReturnMinimum } from "../models/user";
+import httpStatus from "http-status-codes";
+import { CONNECTION } from "../index";
 
 /**
  * Contains error information about a user
  */
 export class UserError extends Error {
   user?: User;
+  status?: number;
 
-  constructor(options: { message: string; user?: User }) {
-    const { message, user } = options;
+  constructor(options: { message: string; user?: User; status?: number }) {
+    const { message, user, status } = options;
     super(message);
     this.user = user;
+    this.status = status;
   }
 }
 
 export class UserServices {
   private userRepository: Repository<User>;
 
-  constructor(usersRepository: Repository<User>) {
-    this.userRepository = usersRepository;
+  constructor(usersRepository?: Repository<User>) {
+    if (usersRepository) {
+      this.userRepository = usersRepository;
+    } else {
+      this.userRepository = CONNECTION.getRepository(User);
+    }
   }
 
   /**
@@ -27,7 +35,10 @@ export class UserServices {
   async getAllUsers(): Promise<iUserReturnMinimum[]> {
     const users = await this.userRepository.find();
     if (!users || users.length < 1) {
-      throw new UserError({ message: "There are no users in the database" });
+      throw new UserError({
+        message: "There are no users in the database",
+        status: httpStatus.NOT_FOUND,
+      });
     }
 
     return users.map((user) => {
@@ -49,7 +60,10 @@ export class UserServices {
   async getUserById(id: number): Promise<iUserReturnMinimum> {
     const user = await this.userRepository.findOne(id);
     if (!user) {
-      throw new UserError({ message: `User with id ${id} not found` });
+      throw new UserError({
+        message: `User with id ${id} not found`,
+        status: httpStatus.NOT_FOUND,
+      });
     }
     return {
       createdAt: user.createdAt,
@@ -75,6 +89,7 @@ export class UserServices {
       throw new UserError({
         message: `username ${user.username} already exists`,
         user: dbUser,
+        status: httpStatus.BAD_REQUEST,
       });
     }
 
