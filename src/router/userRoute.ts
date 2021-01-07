@@ -50,13 +50,17 @@ router.get("/", async (ctx: RouterContext<UserContext>) => {
 
 // Get user by id
 router.get("/user/:userId", async (ctx: RouterContext<UserContext>) => {
-  const { userId } = ctx.params;
-  if (typeof userId !== "number") {
-    throw new UserRouterError({
-      message: "userId must be a number",
-      status: HttpStatus.BAD_REQUEST,
-    });
+  if (typeof ctx.params.userId !== "number") {
+    try {
+      ctx.params.userId = Number.parseInt(ctx.params.userId);
+    } catch (err) {
+      throw new UserRouterError({
+        message: "userId must be a number",
+        status: HttpStatus.BAD_REQUEST,
+      });
+    }
   }
+  const { userId } = ctx.params;
   const user = await ctx.state.userService.getUserById(userId);
   ctx.status = HttpStatus.OK;
   ctx.body = user;
@@ -69,25 +73,38 @@ router.post("/", async (ctx: RouterContext<UserContext>) => {
 });
 
 router.del("/user/:userId", async (ctx: RouterContext<UserContext>) => {
-  const { userId } = ctx.params;
-  if (typeof userId !== "number") {
-    throw new UserRouterError({
-      message: "userId must be a valid number",
-      status: HttpStatus.BAD_REQUEST,
-    });
+  if (typeof ctx.params.userId !== "number") {
+    try {
+      ctx.params.userId = Number.parseInt(ctx.params.userId);
+    } catch (err) {
+      throw new UserRouterError({
+        message: "userId must be a valid number",
+        status: HttpStatus.BAD_REQUEST,
+      });
+    }
   }
+  const { userId } = ctx.params;
+
   ctx.state.userService.deleteUserById(userId);
   ctx.status = HttpStatus.OK;
 });
 
 router.put("/user/:userId", async (ctx: RouterContext<UserContext>) => {
-  const { userId } = ctx.params;
-  if (typeof userId !== "number") {
-    throw new UserRouterError({
-      message: "userId must be a valid number",
-      status: HttpStatus.BAD_REQUEST,
-    });
+  if (typeof ctx.params.userId !== "number") {
+    try {
+      ctx.params.userId = Number.parseInt(ctx.params.userId);
+    } catch (err) {
+      throw new UserRouterError({
+        message: "userId must be a valid number",
+        status: HttpStatus.BAD_REQUEST,
+      });
+    }
   }
+  const { userId } = ctx.params;
+  throw new UserRouterError({
+    message: "This feature is not yet implemented",
+    status: HttpStatus.NOT_IMPLEMENTED,
+  });
 });
 
 export default router;
