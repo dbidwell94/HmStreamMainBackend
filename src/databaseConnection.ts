@@ -13,6 +13,7 @@ const connectionOptions: ConnectionOptions =
         database: process.env.DB_NAME || "hmstream",
         entities: models,
         synchronize: true,
+        name: "development",
       }
     : {
         type: "postgres",
