@@ -18,6 +18,9 @@ const connectionOptions: ConnectionOptions =
     : {
         type: "postgres",
         url: process.env.DATABASE_URL,
+        name: "default",
+        entities: models,
+        synchronize: true,
       };
 
 const connection: Promise<Connection> = createConnection(connectionOptions);
