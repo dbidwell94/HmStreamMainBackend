@@ -76,7 +76,7 @@ export class IpAddressServices {
     ipAddress.address = ipAddress.address.trim();
     const ipAddressChecker = new RegExp(
       /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d{1,5})$/,
-      "gm"
+      "gmi"
     );
     if (!ipAddressChecker.test(ipAddress.address)) {
       throw new IpAddressError({
@@ -86,16 +86,18 @@ export class IpAddressServices {
       });
     }
     // Verify user exists
-    await userServices.getUserById(ipAddress.userId);
-    const matches = ipAddressChecker.exec(ipAddress.address);
-    const port = Number.parseInt(matches[2]);
-    if (port < 1 || port > 65535) {
-      throw new IpAddressError({
-        message: "Port number not in range of 1 - 65535",
-        status: httpStatus.BAD_REQUEST,
-      });
-    }
+    const user = await userServices.getUserById(ipAddress.userId);
 
-    await this.ipAddressRepository.insert(ipAddress);
+    const databaseAddress = await this.ipAddressRepository
+      .createQueryBuilder()
+      .where({ user: ipAddress.userId })
+      .getOne();
+
+    if (databaseAddress) {
+      databaseAddress.address = ipAddress.address;
+      await this.ipAddressRepository.save(databaseAddress);
+    } else {
+      await this.ipAddressRepository.save({ address: ipAddress.address, user });
+    }
   }
 }

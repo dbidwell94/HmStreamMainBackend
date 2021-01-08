@@ -4,11 +4,17 @@ import { RouterContext } from "koa-router";
 import IpAddress from "../models/ipAddress";
 import { IpAddressServices } from "../services/ipAddressServices";
 import httpStatus from "http-status-codes";
+import jwt from "koa-jwt";
+import { SECRET } from "../utils";
+import jwtDecode from "jsonwebtoken";
+import { extractObjectFromBody } from "../models";
+import { ChangeStream } from "typeorm";
 
 const router = new Router();
 
 type IpAddressContext = {
   ipAddressServices: IpAddressServices;
+  user: { id: number; username: string; email: string; iat: number };
 };
 
 class IpAddressRouterError extends Error {
@@ -48,34 +54,27 @@ router.use(
   }
 );
 
-router.get("/", async (ctx: RouterContext<IpAddressContext>) => {
-  const addresses = await ctx.state.ipAddressServices.getAllAddresses();
-  ctx.body = addresses;
+router.use(jwt({ secret: SECRET }));
+
+router.get("/address", async (ctx: RouterContext<IpAddressContext>) => {
+  const address = await ctx.state.ipAddressServices.getAddressByUserId(
+    ctx.state.user.id
+  );
+  ctx.body = address;
   ctx.status = httpStatus.OK;
 });
 
-router.get(
-  "/address/byuser/:userId",
-  async (ctx: RouterContext<IpAddressContext>) => {
-    if (typeof ctx.params.userId !== "number") {
-      try {
-        ctx.params.userId = Number.parseInt(ctx.params.userId);
-      } catch (err) {
-        throw new IpAddressRouterError({
-          message: "userId must be a number",
-          status: httpStatus.BAD_REQUEST,
-        });
-      }
-    }
-
-    const { userId } = ctx.params;
-
-    const address = await ctx.state.ipAddressServices.getAddressByUserId(
-      userId
-    );
-    ctx.body = address;
-    ctx.status = httpStatus.OK;
+router.post("/address", async (ctx: RouterContext<IpAddressContext>) => {
+  enum ipAddressMin {
+    address = "string",
   }
-);
+  const address = extractObjectFromBody(ctx, IpAddress, ipAddressMin);
+
+  await ctx.state.ipAddressServices.createIpAddressListingForUser({
+    address: address.address,
+    userId: ctx.state.user.id,
+  });
+  ctx.status = httpStatus.CREATED;
+});
 
 export default router;
