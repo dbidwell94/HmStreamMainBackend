@@ -2,6 +2,7 @@ import { Repository } from "typeorm";
 import User, { iUserMinimum, iUserReturnMinimum } from "../models/user";
 import httpStatus from "http-status-codes";
 import { CONNECTION } from "../index";
+import bcrypt from "bcrypt";
 
 /**
  * Contains error information about a user
@@ -93,7 +94,46 @@ export class UserServices {
       });
     }
 
-    await this.userRepository.insert(user);
+    await this.userRepository.insert({
+      ...user,
+      password: bcrypt.hashSync(user.password, 10),
+    });
+  }
+
+  async getUserByUsername(username: string): Promise<User> {
+    const dataUser = await this.userRepository
+      .createQueryBuilder()
+      .where({ username })
+      .getOne();
+
+    if (!dataUser) {
+      throw new UserError({
+        message: `User with username ${username} does not exist`,
+        status: httpStatus.NOT_FOUND,
+      });
+    }
+
+    return dataUser;
+  }
+
+  async checkUserPassword(user: {
+    username: string;
+    password: string;
+  }): Promise<boolean> {
+    const { username, password } = user;
+    const dataUser = await this.userRepository
+      .createQueryBuilder()
+      .where({ username })
+      .getOne();
+
+    if (!dataUser) {
+      throw new UserError({
+        message: `User with username ${username} is not in database`,
+        status: httpStatus.NOT_FOUND,
+      });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    return dataUser.password === hashedPassword;
   }
 
   /**

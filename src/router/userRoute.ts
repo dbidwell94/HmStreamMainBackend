@@ -1,9 +1,12 @@
 import Router, { RouterContext } from "koa-router";
 import { userServices } from "../services";
 import HttpStatus from "http-status-codes";
-import User, { userColumnsRequest } from "../models/user";
+import User from "../models/user";
 import { extractObjectFromBody } from "../models";
 import { CONNECTION } from "../index";
+import jwt from "koa-jwt";
+import jwtSerializer from "jsonwebtoken";
+import {SECRET} from '../utils';
 
 interface UserContext {
   userService: userServices.UserServices;
@@ -35,11 +38,63 @@ router.use(
     try {
       await next();
     } catch (err) {
+      console.error(err);
       ctx.body = { error: err.message };
       ctx.status = err.status || HttpStatus.INTERNAL_SERVER_ERROR;
     }
   }
 );
+
+router.use(
+  jwt({ secret: SECRET }).unless({
+    path: [/.*\/login/, /.*\/register/],
+  })
+);
+
+router.post("/login", async (ctx: RouterContext<UserContext>) => {
+  enum userMin {
+    username = "username",
+    password = "password",
+  }
+  const userRequest = extractObjectFromBody(ctx, User, userMin);
+  if (!ctx.state.userService.checkUserPassword(userRequest)) {
+    throw new UserRouterError({
+      message: "Authentication failed",
+      status: HttpStatus.UNAUTHORIZED,
+    });
+  }
+  const {
+    password,
+    ipAddress,
+    createdAt,
+    updatedAt,
+    ...rest
+  } = await ctx.state.userService.getUserByUsername(userRequest.username);
+  const token = jwtSerializer.sign(rest, SECRET);
+  ctx.body = { token };
+  ctx.status = HttpStatus.OK;
+});
+
+router.post("/register", async (ctx: RouterContext<UserContext>) => {
+  enum userMinimum {
+    username = "username",
+    password = "password",
+    email = "email",
+  }
+  const userMin = extractObjectFromBody(ctx, User, userMinimum);
+  await ctx.state.userService.createNewUser(userMin);
+
+  const {
+    createdAt,
+    ipAddress,
+    updatedAt,
+    password,
+    ...rest
+  } = await ctx.state.userService.getUserByUsername(userMin.username);
+  const token = jwtSerializer.sign(rest, SECRET);
+  ctx.body = { token };
+  ctx.status = HttpStatus.CREATED;
+});
 
 // Get all users
 router.get("/", async (ctx: RouterContext<UserContext>) => {
@@ -64,12 +119,6 @@ router.get("/user/:userId", async (ctx: RouterContext<UserContext>) => {
   const user = await ctx.state.userService.getUserById(userId);
   ctx.status = HttpStatus.OK;
   ctx.body = user;
-});
-
-router.post("/", async (ctx: RouterContext<UserContext>) => {
-  const userMin = extractObjectFromBody(ctx, User, userColumnsRequest);
-  await ctx.state.userService.createNewUser(userMin);
-  ctx.status = HttpStatus.ACCEPTED;
 });
 
 router.del("/user/:userId", async (ctx: RouterContext<UserContext>) => {

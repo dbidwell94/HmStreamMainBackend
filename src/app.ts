@@ -2,13 +2,15 @@ import Koa, { Context } from "koa";
 import HttpStatus from "http-status-codes";
 import dotenv from "dotenv";
 import koaBody from "koa-body";
-import apiRouter from './router';
+import apiRouter from "./router";
+import jwt from "koa-jwt";
 
 dotenv.config();
 
 const app = new Koa();
 app.use(koaBody());
 
+// Error handler
 app.use(async (ctx: Context, next: () => Promise<any>) => {
   try {
     await next();

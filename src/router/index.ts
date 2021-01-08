@@ -11,7 +11,7 @@ apiRouter.get("/", async (ctx: RouterContext) => {
 });
 
 apiRouter.use("/users", UserRouter.routes());
-apiRouter.use("/address", AddressRouter.routes());
+apiRouter.use("/addresses", AddressRouter.routes());
 
 export default {
   routes: apiRouter.routes(),
