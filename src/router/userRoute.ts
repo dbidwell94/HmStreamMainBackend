@@ -57,7 +57,7 @@ router.post("/login", async (ctx: RouterContext<UserContext>) => {
     password = "password",
   }
   const userRequest = extractObjectFromBody(ctx, User, userMin);
-  if (!ctx.state.userService.checkUserPassword(userRequest)) {
+  if (!await ctx.state.userService.checkUserPassword(userRequest)) {
     throw new UserRouterError({
       message: "Authentication failed",
       status: HttpStatus.UNAUTHORIZED,

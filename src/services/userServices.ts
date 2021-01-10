@@ -3,6 +3,7 @@ import User, { iUserMinimum, iUserReturnMinimum } from "../models/user";
 import httpStatus from "http-status-codes";
 import { CONNECTION } from "../index";
 import bcrypt from "bcrypt";
+import { SECRET } from "../utils";
 
 /**
  * Contains error information about a user
@@ -132,8 +133,7 @@ export class UserServices {
         status: httpStatus.NOT_FOUND,
       });
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    return dataUser.password === hashedPassword;
+    return await bcrypt.compare(password, dataUser.password);
   }
 
   /**

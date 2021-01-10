@@ -3,12 +3,13 @@ import HttpStatus from "http-status-codes";
 import dotenv from "dotenv";
 import koaBody from "koa-body";
 import apiRouter from "./router";
-import jwt from "koa-jwt";
+import cors from "@koa/cors";
 
 dotenv.config();
 
 const app = new Koa();
 app.use(koaBody());
+app.use(cors());
 
 // Error handler
 app.use(async (ctx: Context, next: () => Promise<any>) => {
@@ -21,12 +22,6 @@ app.use(async (ctx: Context, next: () => Promise<any>) => {
     ctx.body = { error };
     ctx.app.emit("error", error, ctx);
   }
-});
-
-app.use(async (ctx: Context, next: () => Promise<any>) => {
-  ctx.set("Content-Type", "application/json");
-  ctx.set("Access-Control-Allow-Origin", "*");
-  await next();
 });
 
 app.use(apiRouter.routes);
